@@ -74,12 +74,11 @@
         "tsx": "never"
       }
     ],
-    "@typescript-eslint/explicit-function-return-type": [
-      "error",
+    "@typescript-eslint/explicit-function-return-type":
       {
         "allowExpressions": true
       }
-    ],
+    ,
     "@typescript-eslint/camelcase": "off"
   },
   "settings": {
