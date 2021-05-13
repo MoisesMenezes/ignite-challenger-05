@@ -1,1 +1,55 @@
-// TODO
+.postHeader {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 2rem;
+
+  height: 10rem;
+}
+
+.postContainer {
+  display: grid;
+  grid-gap: 4rem;
+}
+
+.postContent {
+  h1 {
+    color: var(--gray-200);
+    font-weight: 700;
+    font-size: 1.87rem;
+    letter-spacing: -0.5px;
+
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: var(--gray-500);
+    font-size: 1.2rem;
+    line-height: 1.49rem;
+  }
+}
+
+.iconsContainer {
+  margin-top: 1.6667rem; // 25px
+  display: flex;
+
+  .iconsContent {
+    display: flex;
+
+    & + div {
+      margin-left: 2rem;
+    }
+
+    svg,
+    p {
+      color: var(--gray-700);
+    }
+
+    svg {
+      margin-right: 0.7rem;
+    }
+
+    p {
+      font-size: 0.94rem;
+    }
+  }
+}
