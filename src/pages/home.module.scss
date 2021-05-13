@@ -4,6 +4,8 @@
   padding: 0 2rem;
 
   height: 10rem;
+  display: flex;
+  align-items: center;
 }
 
 .postContainer {
@@ -51,5 +53,15 @@
     p {
       font-size: 0.94rem;
     }
+  }
+}
+
+.loadPost {
+  margin-top: 4rem;
+  display: block;
+  strong {
+    color: var(--purple-500);
+    font-weight: 600;
+    font-size: 1.2rem;
   }
 }
