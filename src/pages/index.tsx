@@ -9,6 +9,9 @@ import Prismic from '@prismicio/client';
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
 import Link from 'next/link';
+import { useState } from 'react';
+import { FormateDate } from '../utils/formateDate';
+import  Head  from "next/head";
 
 interface Post {
   uid?: string;
@@ -30,15 +33,58 @@ interface HomeProps {
 }
 
 export default function Home({ postsPagination }: HomeProps) {
+
+  const postFormated = postsPagination.results.map(post => {
+    return {
+      ...post,
+      first_publication_date:FormateDate(post.first_publication_date),
+    };
+  });
+
+  const [post, setPosts] = useState<Post[]>(postFormated);
+  const [nextPage, setNextPage] = useState(postsPagination.next_page);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const handleNextPage = async () => {
+    if (currentPage !== 1 && nextPage === null) {
+      return;
+    }
+
+    const postResult = await fetch(`${nextPage}`).then(response => {
+      return response.json();
+    });
+
+    setNextPage(postResult.next_page);
+    setCurrentPage(postResult.page);
+
+    const newPost = postResult.results.map(post => {
+      return {
+        uid: post.uid,
+        first_publication_date: FormateDate(post.first_publication_date),
+        data: {
+          title: post.data.title,
+          subtitle: post.data.subtitle,
+          author: post.data.author,
+        },
+      };
+    });
+
+    setPosts([...post, ...newPost]);
+  };
+
   return (
     <>
+      <Head>
+        <title> Home | SpaceTraveling</title>
+      </Head>
+
       <header className={styles.postHeader}>
         <img src="/logo.svg" alt="logo" />
       </header>
       <main className={commonStyles.contentContainer}>
         <div className={styles.postContainer}>
-          {postsPagination.results.map(post => (
-            <Link href={`/post/${post.uid}`}  key={post.uid}>
+          {post.map(post => (
+            <Link href={`/post/${post.uid}`} key={post.uid}>
               <div className={styles.postContent}>
                 <h1>{post.data.title}</h1>
                 <p>{post.data.subtitle}</p>
@@ -57,10 +103,15 @@ export default function Home({ postsPagination }: HomeProps) {
             </Link>
           ))}
         </div>
-
-        <a className={styles.loadPost} href="#">
-          <strong>Carregar mais posts</strong>
-        </a>
+        {nextPage && (
+          <button
+            className={styles.loadPost}
+            type="button"
+            onClick={handleNextPage}
+          >
+            <strong>Carregar mais posts</strong>
+          </button>
+        )}
       </main>
     </>
   );
@@ -71,21 +122,14 @@ export const getStaticProps: GetStaticProps = async () => {
   const postsResponse = await prismic.query(
     [Prismic.predicates.at('document.type', 'posts')],
     {
-      fetch: ['post.title', 'post.content'],
-      pageSize: 3,
+      pageSize: 1,
     }
   );
 
   const posts = postsResponse.results.map(post => {
     return {
       uid: post.uid,
-      first_publication_date: format(
-        parseISO(post.first_publication_date),
-        'd MMM yyyy',
-        {
-          locale: ptBR,
-        }
-      ),
+      first_publication_date: post.first_publication_date,
       data: {
         title: post.data.title,
         subtitle: post.data.subtitle,
@@ -96,12 +140,12 @@ export const getStaticProps: GetStaticProps = async () => {
 
   const nextPage = postsResponse.next_page;
 
+  const postsPagination = {
+    next_page: nextPage,
+    results: posts,
+  };
+
   return {
-    props: {
-      postsPagination: {
-        next_page: nextPage,
-        results: posts,
-      },
-    },
+    props: { postsPagination },
   };
 };

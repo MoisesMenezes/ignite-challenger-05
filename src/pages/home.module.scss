@@ -58,7 +58,9 @@
 
 .loadPost {
   margin-top: 4rem;
-  display: block;
+  background: transparent;
+  border: none;
+
   strong {
     color: var(--purple-500);
     font-weight: 600;
