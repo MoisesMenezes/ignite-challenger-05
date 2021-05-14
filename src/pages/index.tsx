@@ -1,17 +1,15 @@
+import { useState } from 'react';
 import { GetStaticProps } from 'next';
+import Link from 'next/link';
+import Head from 'next/head';
 
 import { getPrismicClient } from '../services/prismic';
-import { FiUser, FiCalendar } from 'react-icons/fi';
-import { format, parseISO } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
 import Prismic from '@prismicio/client';
 
+import { FiUser, FiCalendar } from 'react-icons/fi';
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
-import Link from 'next/link';
-import { useState } from 'react';
 import { FormateDate } from '../utils/formateDate';
-import  Head  from "next/head";
 
 interface Post {
   uid?: string;
@@ -33,11 +31,10 @@ interface HomeProps {
 }
 
 export default function Home({ postsPagination }: HomeProps) {
-
   const postFormated = postsPagination.results.map(post => {
     return {
       ...post,
-      first_publication_date:FormateDate(post.first_publication_date),
+      first_publication_date: FormateDate(post.first_publication_date),
     };
   });
 

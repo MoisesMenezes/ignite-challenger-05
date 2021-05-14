@@ -1,14 +1,16 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
+import { useRouter } from 'next/router';
+import  Head  from "next/head";
 import Header from '../../components/Header';
 
+import Prismic from '@prismicio/client';
 import { getPrismicClient } from '../../services/prismic';
-import { format, parseISO } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
 import { RichText } from 'prismic-dom';
 
-import commonStyles from '../../styles/common.module.scss';
-import { FiUser, FiCalendar, FiClock } from 'react-icons/fi';
 import styles from './post.module.scss';
+import { FiUser, FiCalendar, FiClock } from 'react-icons/fi';
+import commonStyles from '../../styles/common.module.scss';
+import { FormateDate } from '../../utils/formateDate';
 
 interface Post {
   first_publication_date: string | null;
@@ -32,36 +34,60 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps) {
+
+  const router = useRouter();
+  const totalWords = post.data.content.reduce((total, contentItem) => {
+    total += contentItem.heading.split(" ").length;
+
+    const words = contentItem.body.map(item => item.text.split(" ") .length);
+    words.map(word => (total += word));
+    return total;
+  },0)
+
+  const readTime = Math.ceil(totalWords / 200);
+
+
+  if(router.isFallback) {
+    return <h1>Carregando...</h1>
+  }
+
   return (
     <>
+      <Head>
+        <title>{post.data.title} | SpaceTraveling</title>
+      </Head>
       <Header />
       <div className={styles.banner}>
-        <img src={post.data.banner.url} alt="banner" />
+        <img src={post?.data.banner.url} alt="banner" />
       </div>
       <div className={commonStyles.contentContainer}>
         <main className={styles.container}>
-          <h1>{post.data.title}</h1>
+          <h1>{post?.data.title}</h1>
           <div className={styles.informationContainer}>
             <div className={styles.informationContent}>
               <FiCalendar size={20} />
-              <p>{post.first_publication_date}</p>
+              <p>{FormateDate(post?.first_publication_date)}</p>
             </div>
             <div className={styles.informationContent}>
               <FiUser size={20} />
-              <p>{post.data.author}</p>
+              <p>{post?.data.author}</p>
             </div>
             <div className={styles.informationContent}>
               <FiClock size={20} />
-              <p>4 min</p>
+              <p>{`${readTime} min`}</p>
             </div>
           </div>
 
-          {post.data.content.map(content => (
-            <div className={styles.content} key={content.heading}>
-              <h2 >{content.heading}</h2>
+          {post?.data.content.map(content => (
+            <article className={styles.content} key={content.heading}>
+              <h2>{content.heading}</h2>
 
-              <div  dangerouslySetInnerHTML={{ __html: content.body[0].text }}/>
-            </div>
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: RichText.asHtml(content.body),
+                }}
+              />
+            </article>
           ))}
         </main>
       </div>
@@ -71,13 +97,21 @@ export default function Post({ post }: PostProps) {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const prismic = getPrismicClient();
-  // const posts = await prismic.query(TODO);
+  const post = await prismic.query([
+    Prismic.predicates.at('document.type', 'posts'),
+  ]);
+
+  const paths = post.results.map(post => {
+    return {
+      params: {
+        slug: post.uid
+      }
+    }
+  })
 
   return {
-    paths: [
-      {params: {slug: "react-hooks-como-utilizar"}}
-    ],
-    fallback: 'blocking',
+    paths,
+    fallback: true,
   };
 };
 
@@ -89,29 +123,27 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const content = response.data.content.map(content => {
     return {
       heading: content.heading,
-      body: [{ text: RichText.asHtml(content.body) }],
+      body: [...content.body],
     };
   });
 
   const post = {
-    first_publication_date: format(
-      parseISO(response.first_publication_date),
-      'd MMM yyyy',
-      {
-        locale: ptBR,
-      }
-    ),
+    uid: response.uid,
+    first_publication_date: response.first_publication_date,
     data: {
       title: response.data.title,
+      subtitle: response.data.subtitle,
       author: response.data.author,
       banner: {
         url: response.data.banner.url,
       },
-      content,
+      content: content,
     },
   };
 
   return {
-    props: { post },
+    props: {
+      post,
+    }
   };
 };
